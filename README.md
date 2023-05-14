@@ -93,7 +93,7 @@ The API documentation is available at http://localhost:8000/docs or http://local
 To run the tests, navigate to the project directory and run the following command:
 
     
-    docker-compose up --build -d && docker-compose run --rm web python -m pytest && docker-compose down
+    docker compose up --build -d && docker compose run --rm web python -m pytest && docker compose down
 
 
 This command builds the Docker image and runs the tests defined in the tests directory, then stops and removes the containers.
@@ -103,6 +103,6 @@ This command builds the Docker image and runs the tests defined in the tests dir
 
 To stop the application, run the following command in the terminal:
 
-    docker-compose down
+    docker compose down
 
 This command stops and removes the containers.
