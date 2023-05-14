@@ -50,7 +50,12 @@ These are the minimum required parameters that you should configure:
     REDIS_PORT=6379
     REDIS_PASSWORD=changeMe # Always use a strong password in production
 
-These are all the available parameters that can be configured in the .env file:
+These are all the available parameters that can be configured. Any parameter added to the Settings class in config.py can be configured in the .env file.
+
+    # Web server settings
+    WEB_HOST=0.0.0.0
+    WEB_PORT=8000
+    WEB_SERVER=uvicorn # Valid values: uvicorn, gunicorn
 
     # General settings
     APP_NAME=Fancy Star Wars API Service
