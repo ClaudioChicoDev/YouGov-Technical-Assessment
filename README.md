@@ -90,9 +90,11 @@ After setting up the .env file, you can run the application using Docker Compose
 
 This command builds the Docker image and starts the containers defined in docker-compose.yml.
 
-You can access the API at http://localhost:8000, the route for the technical assessment is http://localhost:8000/characters/top_10_sorted. 
+You can access the API at http://localhost:8000. 
+The route for the technical assessment is http://localhost:8000/characters/top_10_sorted. 
 The API documentation is available at http://localhost:8000/docs or http://localhost:8000/redoc 
-(ports may vary depending on your .env file configuration).
+
+*The Port may vary depending on your .env file configuration*
 
 ## Running the tests
 
