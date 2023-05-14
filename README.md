@@ -75,11 +75,11 @@ These are all the available parameters that can be configured. Any parameter add
     # Cache settings
     CACHE_TTL=10  # This is the default TTL for the Redis cached data (in seconds)
 
-    # CORS (* is enabled by default)
-    ALLOWED_ORIGINS=  # Add comma-separated list of allowed origins here
+    # CORS - * is enabled by default. You can add a comma-separated list of allowed origins, methods and headers.
+    ALLOWED_ORIGINS=*
     ALLOW_CREDENTIALS=True
-    ALLOWED_METHODS=  # Add comma-separated list of allowed methods here
-    ALLOWED_HEADERS=  # Add comma-separated list of allowed headers here
+    ALLOWED_METHODS=*
+    ALLOWED_HEADERS=*
 
 
 ## Running the application
