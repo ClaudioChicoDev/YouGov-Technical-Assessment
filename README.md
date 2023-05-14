@@ -1,18 +1,21 @@
 # FastAPI-Redis Dockerized Application - Star Wars API
-This is an advanced FastAPI application that fetches data from the Star Wars API and uses Redis for caching. The application is containerized using Docker and orchestrated using Docker Compose. It also includes detailed API testing.
-
-For the Technical Assessment I've create the /characters/top_10_sorted endpoint.
-Here is the link to the swapi API documentation that this service uses: https://swapi.dev/documentation
-
-You can check the documentation of this service at http://localhost:8000/docs or http://localhost:8000/redoc (ports may vary depending on your .env file configuration).
+This is an advanced FastAPI application that fetches data from the Star Wars API (https://swapi.dev/documentation).
 
 
 ## Features
-- Retrieves data from the Star Wars API.
-- Caches data using Redis to improve performance.
-- Includes comprehensive API testing.
-- Generates a CSV file from the retrieved data.
-- Dockerized for easy setup and deployment.
+- Containerized with Docker and Docker Compose. The application is run in a container and Redis is run in a separate container both defined in the docker-compose.yml file.
+- Uses FastAPI as the web framework. An ASGI server (Uvicorn or Gunicorn) can be selected in the .env file.
+- Uses Redis for cache storage (with a short, but configurable TTL in seconds).
+- Health check endpoint to verify the application and Redis connection.
+- CORS enabled by default and configurable in the .env file.
+- API documentation with Swagger UI and ReDoc. http://localhost:8000/docs or http://localhost:8000/redoc (port may vary depending on your .env file configuration).
+- Schema validation using Pydantic.
+- Retrieves data from the Star Wars API concurrently using standard Python libraries.
+- Generates a CSV file from the retrieved data and saves it to disk.
+- Sends the CSV file to https://httpbin.org/post using a POST request.
+- Logs directly to console with print, but can easily be configured to use a logging library instead.
+- Handles exceptions and errors raising HTTPException with appropriate status codes and messages.
+- Includes comprehensive API testing of all endpoints in cache and no-cache modes.
 
 
 ## Endpoints
@@ -21,6 +24,8 @@ This application provides several API endpoints:
 - GET /healthcheck: Provides a health check for the application and Redis connection.
 - GET /: Returns basic information about the API.
 - GET /characters/top_10_sorted: Returns a list of top 10 Star Wars characters (per movie appearance), sorted by their height. Caching can be enabled or disabled using the use_cache query parameter.
+
+For more information, please refer to the API documentation.
 
 
 ## Requirements
@@ -33,9 +38,9 @@ If you don't have Docker and/or Docker Compose, you can follow the instructions 
 
 ## Environment Variables
 
-The .env file contains the environment variables used by Docker Compose and the application itself:
+The .env file contains the environment variables used by Docker Compose and the application itself. The file is expected to be in the root directory of the project (at the same level as the docker-compose.yml file).
 
-These are the minimum required parameters that you should configure in the .env file:
+These are the minimum required parameters that you should configure:
 
     WEB_HOST=0.0.0.0
     WEB_PORT=8000
@@ -73,23 +78,25 @@ These are all the available parameters that can be configured in the .env file:
 
 ## Running the application
 
-To run the application, navigate to the project directory and run the following command:
+After setting up the .env file, you can run the application using Docker Compose. To launch the application, navigate to the project root directory and run the following command:
 
-    docker-compose up --build web
+    docker compose up --build web
 
-This command builds the Docker image and starts the container for the web service defined in docker-compose.yml.
+This command builds the Docker image and starts the containers defined in docker-compose.yml.
 
-You can access the FastAPI application at http://localhost:8000 (or any other port you have defined in the .env file).
+You can access the API at http://localhost:8000, the route for the technical assessment is http://localhost:8000/characters/top_10_sorted. 
+The API documentation is available at http://localhost:8000/docs or http://localhost:8000/redoc 
+(ports may vary depending on your .env file configuration).
 
 ## Running the tests
 
 To run the tests, navigate to the project directory and run the following command:
 
     
-    docker compose run --rm --build web python -m pytest
+    docker-compose up --build -d && docker-compose run --rm web python -m pytest && docker-compose down
 
 
-This command builds the Docker image and runs the tests defined in the tests directory. The --rm flag removes the container after the tests have finished running. The --build flag is optional but advised, it forces the image to be rebuilt before running the tests.
+This command builds the Docker image and runs the tests defined in the tests directory, then stops and removes the containers.
 
 
 ## Stopping the application
