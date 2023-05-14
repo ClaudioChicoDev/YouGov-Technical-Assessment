@@ -1,0 +1,8 @@
+fastapi[all]
+uvicorn
+gunicorn
+pydantic
+requests
+pandas
+redis
+
