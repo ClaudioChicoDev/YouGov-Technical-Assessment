@@ -59,7 +59,7 @@ These are all the available parameters that can be configured in the .env file:
     REDIS_PASSWORD= changeMe # Always use a strong password in production
 
     # Concurrency settings
-    MAX_CONCURRENT_WORKERS=5 # This is the maximum number of concurrent workers that will be used for concurrent tasks
+    MAX_CONCURRENT_WORKERS=5 # This is the maximum number of workers that will be used for concurrent tasks by a single initiator
 
     # Cache settings
     CACHE_TTL=10  # This is the default TTL for the Redis cached data (in seconds)
