@@ -1,7 +1,7 @@
 # FastAPI-Redis Dockerized Application - Star Wars API
 This is an advanced FastAPI application that fetches data from the Star Wars API and uses Redis for caching. The application is containerized using Docker and orchestrated using Docker Compose. It also includes detailed API testing.
 
-For the Technical Assessment I've create the /characters/sorted_top_characters endpoint.
+For the Technical Assessment I've create the /characters/top_10_sorted endpoint.
 Here is the link to the swapi API documentation that this service uses: https://swapi.dev/documentation
 
 You can check the documentation of this service at http://localhost:8000/docs or http://localhost:8000/redoc (ports may vary depending on your .env file configuration).
@@ -20,7 +20,7 @@ This application provides several API endpoints:
 
 - GET /healthcheck: Provides a health check for the application and Redis connection.
 - GET /: Returns basic information about the API.
-- GET /characters/sorted_top_characters: Returns a list of top 10 Star Wars characters (per movie appearance), sorted by their height. Caching can be enabled or disabled using the use_cache query parameter.
+- GET /characters/top_10_sorted: Returns a list of top 10 Star Wars characters (per movie appearance), sorted by their height. Caching can be enabled or disabled using the use_cache query parameter.
 
 
 ## Requirements

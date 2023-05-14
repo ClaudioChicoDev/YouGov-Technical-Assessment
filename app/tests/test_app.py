@@ -163,73 +163,73 @@ def test_fetch_species_data_with_cache():
     assert species_data["name"] == "Droid"
 
 
-def test_sorted_top_characters_without_cache():
-    response = client.get("/characters/sorted_top_characters?use_cache=False")
+def test_top_10_sorted_without_cache():
+    response = client.get("/characters/top_10_sorted?use_cache=False")
     assert response.status_code == 200
-    sorted_top_characters = response.json()
-    assert isinstance(sorted_top_characters, list)
-    assert len(sorted_top_characters) == 10
-    for character in sorted_top_characters:
+    top_10_sorted = response.json()
+    assert isinstance(top_10_sorted, list)
+    assert len(top_10_sorted) == 10
+    for character in top_10_sorted:
         assert schemas.CharacterBasicInfo(**character)
 
     # Confirm that the first character is Chewbacca
-    assert sorted_top_characters[0]["name"] == "Chewbacca"
-    assert sorted_top_characters[0]["height"] == 228
-    assert sorted_top_characters[0]["appearances"] == 4
-    assert sorted_top_characters[0]["species"] == "Wookie"
+    assert top_10_sorted[0]["name"] == "Chewbacca"
+    assert top_10_sorted[0]["height"] == 228
+    assert top_10_sorted[0]["appearances"] == 4
+    assert top_10_sorted[0]["species"] == "Wookie"
 
     # Confirm that the last character is Yoda
-    assert sorted_top_characters[-1]["name"] == "Yoda"
-    assert sorted_top_characters[-1]["height"] == 66
-    assert sorted_top_characters[-1]["appearances"] == 5
-    assert sorted_top_characters[-1]["species"] == "Yoda's species"
+    assert top_10_sorted[-1]["name"] == "Yoda"
+    assert top_10_sorted[-1]["height"] == 66
+    assert top_10_sorted[-1]["appearances"] == 5
+    assert top_10_sorted[-1]["species"] == "Yoda's species"
 
 
-def test_sorted_top_characters_with_cache():
+def test_top_10_sorted_with_cache():
     # Make the first request without using the cache
-    response = client.get("/characters/sorted_top_characters?use_cache=False")
+    response = client.get("/characters/top_10_sorted?use_cache=False")
 
     assert response.status_code == 200
-    sorted_top_characters = response.json()
-    assert isinstance(sorted_top_characters, list)
-    assert len(sorted_top_characters) == 10
-    for character in sorted_top_characters:
+    top_10_sorted = response.json()
+    assert isinstance(top_10_sorted, list)
+    assert len(top_10_sorted) == 10
+    for character in top_10_sorted:
         assert schemas.CharacterBasicInfo(**character)
 
     # Confirm that the first character is Chewbacca
-    assert sorted_top_characters[0]["name"] == "Chewbacca"
-    assert sorted_top_characters[0]["height"] == 228
-    assert sorted_top_characters[0]["appearances"] == 4
-    assert sorted_top_characters[0]["species"] == "Wookie"
+    assert top_10_sorted[0]["name"] == "Chewbacca"
+    assert top_10_sorted[0]["height"] == 228
+    assert top_10_sorted[0]["appearances"] == 4
+    assert top_10_sorted[0]["species"] == "Wookie"
 
     # Make new requests using the cache
-    response = client.get("/characters/sorted_top_characters?use_cache=True")
-    response = client.get("/characters/sorted_top_characters?use_cache=True")
+    response = client.get("/characters/top_10_sorted?use_cache=True")
+    response = client.get("/characters/top_10_sorted?use_cache=True")
 
     assert response.status_code == 200
-    sorted_top_characters = response.json()
-    assert isinstance(sorted_top_characters, list)
-    assert len(sorted_top_characters) == 10
-    for character in sorted_top_characters:
+    top_10_sorted = response.json()
+    assert isinstance(top_10_sorted, list)
+    assert len(top_10_sorted) == 10
+    for character in top_10_sorted:
         assert schemas.CharacterBasicInfo(**character)
 
     # Confirm that the first character is Chewbacca
-    assert sorted_top_characters[0]["name"] == "Chewbacca"
-    assert sorted_top_characters[0]["height"] == 228
-    assert sorted_top_characters[0]["appearances"] == 4
-    assert sorted_top_characters[0]["species"] == "Wookie"
+    assert top_10_sorted[0]["name"] == "Chewbacca"
+    assert top_10_sorted[0]["height"] == 228
+    assert top_10_sorted[0]["appearances"] == 4
+    assert top_10_sorted[0]["species"] == "Wookie"
 
 
 def test_csv_generation():
     # Generate the CSV by calling the API endpoint
-    response = client.get("/characters/sorted_top_characters", params={"use_cache": False})
+    response = client.get("/characters/top_10_sorted", params={"use_cache": False})
     assert response.status_code == 200
 
     # Make sure the CSV file exists
-    assert os.path.isfile('csv/sorted_top_characters.csv')
+    assert os.path.isfile('csv/top_10_sorted.csv')
 
     # Load the CSV into a DataFrame
-    df = pd.read_csv('csv/sorted_top_characters.csv')
+    df = pd.read_csv('csv/top_10_sorted.csv')
 
     # Check the shape of the DataFrame
     assert df.shape[0] == 10  # Exactly ten rows

@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from redis import Redis
 from ..utils import get_redis_client
-from .route_description import GET_SORTED_TOP_CHARACTERS_DESCRIPTION
+from .route_description import GET_TOP_10_SORTED_DESCRIPTION
 import json
 import requests
 import pandas as pd
@@ -110,19 +110,19 @@ def fetch_species_data(species_url: str, use_cache: bool = True):
                                 detail="Unable to fetch species data. API response format is invalid")
 
 
-@router.get("/sorted_top_characters", response_model=List[CharacterBasicInfo], description=GET_SORTED_TOP_CHARACTERS_DESCRIPTION)
-def get_sorted_top_characters(redis_client: Redis = Depends(get_redis_client), use_cache: bool = True):
+@router.get("/top_10_sorted", response_model=List[CharacterBasicInfo], description=GET_TOP_10_SORTED_DESCRIPTION)
+def get_top_10_sorted(redis_client: Redis = Depends(get_redis_client), use_cache: bool = True):
 
-    sorted_top_characters = None
+    top_10_sorted = None
     if use_cache:
-        cache_data = redis_client.get("sorted_top_characters_cache")
+        cache_data = redis_client.get("top_10_sorted_cache")
     else:
         cache_data = None
     if bool(cache_data):
         print(
-            f" - Cache TTL: {redis_client.ttl('sorted_top_characters_cache')} seconds")
+            f" - Cache TTL: {redis_client.ttl('top_10_sorted_cache')} seconds")
         print(" - Cache found")
-        sorted_top_characters = json.loads(cache_data.decode("utf-8"))
+        top_10_sorted = json.loads(cache_data.decode("utf-8"))
     else:
         print(" - No cache found, fetching data from API")
         #this could be dynamic but the request was to use 10 characters only
@@ -143,20 +143,20 @@ def get_sorted_top_characters(redis_client: Redis = Depends(get_redis_client), u
                 character_appearances[character_url]["count"] += 1
 
         # Sort characters based on appearance count and get top nth characters
-        sumarized_top_characters = {}
+        top_characters_data = {}
         for character in sorted(character_appearances.values(), key=lambda x: x["count"], reverse=True):
-            sumarized_top_characters[character["url"]] = character
-            if len(sumarized_top_characters) == max_characters:
+            top_characters_data[character["url"]] = character
+            if len(top_characters_data) == max_characters:
                 break
 
         # Fetch character data per character concurrently
         with ThreadPoolExecutor(max_workers=settings.max_concurrent_workers) as executor:
-            future_to_url = {executor.submit(
-                fetch_character_data, url): url for url in sumarized_top_characters}
-            for future in as_completed(future_to_url):
-                url = future_to_url[future]
+            futures_to_character_urls = {executor.submit(
+                fetch_character_data, url): url for url in top_characters_data}
+            for future in as_completed(futures_to_character_urls):
+                url = futures_to_character_urls[future]
                 try:
-                    sumarized_top_characters[url] = future.result()
+                    top_characters_data[url] = future.result()
                 except Exception as exc:
                     print(
                         f"Fetching character {url} raised an exception: {exc}")
@@ -165,36 +165,36 @@ def get_sorted_top_characters(redis_client: Redis = Depends(get_redis_client), u
 
         # Fetch species data per character concurrently
         with ThreadPoolExecutor(max_workers=settings.max_concurrent_workers) as executor:
-            future_to_url_species = {}
-            for url, character in sumarized_top_characters.items():
+            futures_to_character_urls_species = {}
+            for url, character in top_characters_data.items():
                 for species_url in character["species"]:
                     future = executor.submit(fetch_species_data, species_url)
-                    future_to_url_species[(url, species_url)] = future
+                    futures_to_character_urls_species[(url, species_url)] = future
 
-            for (url, species_url), future in future_to_url_species.items():
+            for (url, species_url), future in futures_to_character_urls_species.items():
                 try:
                     species_data = future.result()
-                    species_index = sumarized_top_characters[url]["species"].index(species_url)
-                    sumarized_top_characters[url]["species"][species_index] = species_data["name"]
+                    species_index = top_characters_data[url]["species"].index(species_url)
+                    top_characters_data[url]["species"][species_index] = species_data["name"]
                 except Exception as exc:
                     print(f"Fetching species {species_url} for character {url} raised an exception: {exc}")
                     raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Unable to fetch species data for {species_url}")
 
         # Format species names and add the appearances count explicitly
-        for url, character in sumarized_top_characters.items():
-            sumarized_top_characters[url]["species"] = " & ".join(
+        for url, character in top_characters_data.items():
+            top_characters_data[url]["species"] = " & ".join(
                 character["species"])
-            sumarized_top_characters[url]["appearances"] = len(
+            top_characters_data[url]["appearances"] = len(
                 character["films"])
 
         # Sort characters based on height
-        sorted_top_characters = sorted(sumarized_top_characters.values(
+        top_10_sorted = sorted(top_characters_data.values(
         ), key=lambda x: int(x["height"]), reverse=True)
 
         if use_cache:
             # Cache the result with a TTL of settings.cache_ttl
-            redis_client.setex("sorted_top_characters_cache", settings.cache_ttl, json.dumps(
-                sorted_top_characters))
+            redis_client.setex("top_10_sorted_cache", settings.cache_ttl, json.dumps(
+                top_10_sorted))
             print(
                 f" - Cache set with TTL: {settings.cache_ttl} seconds")
 
@@ -202,7 +202,7 @@ def get_sorted_top_characters(redis_client: Redis = Depends(get_redis_client), u
     # It's a bit overkill to use Pandas for this simple case, but lets do it anyway.
 
     # Create a dataframe with the data
-    df = pd.DataFrame(sorted_top_characters)
+    df = pd.DataFrame(top_10_sorted)
 
     # Select the columns we want
     df = df[["name", "species", "height", "appearances"]]
@@ -212,19 +212,20 @@ def get_sorted_top_characters(redis_client: Redis = Depends(get_redis_client), u
 
     # Save the dataframe as a CSV file in the ./csv folder. Create the folder if it doesn't exist
     os.makedirs("csv", exist_ok=True)
-    df.to_csv("csv/sorted_top_characters.csv", index=False)
+    df.to_csv("csv/top_10_sorted.csv", index=False)
 
     # Print the csv file content
     print("\n - CSV file content:")
     print(df.to_csv(index=False))
 
     # Send the CSV to httpbin.org
-    files = {'file': open('csv/sorted_top_characters.csv', 'rb')}
-    response = requests.post('https://httpbin.org/post', files=files)
-    if response.status_code != 200:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Unable to send CSV file to httpbin.org")
-    else:
-        print(" - CSV file sent to httpbin.org successfully")
+    with open('csv/top_10_sorted.csv', 'rb') as f:
+        files = {'file': f}
+        response = requests.post('https://httpbin.org/post', files=files)
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Unable to send CSV file to httpbin.org")
+        else:
+            print(" - CSV file sent to httpbin.org successfully")
 
-    return sorted_top_characters
+    return top_10_sorted
