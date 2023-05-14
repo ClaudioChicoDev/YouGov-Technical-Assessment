@@ -10,7 +10,8 @@ This is an advanced FastAPI application that fetches data from the Star Wars API
 - CORS enabled by default and configurable in the .env file.
 - API documentation with Swagger UI and ReDoc. http://localhost:8000/docs or http://localhost:8000/redoc (port may vary depending on your .env file configuration).
 - Schema validation using Pydantic.
-- Retrieves data from the Star Wars API concurrently using standard Python libraries.
+- Retrieves data from the Star Wars API concurrently.
+- Uses a standard Python concurrent strategy suitable for generalization.
 - Generates a CSV file from the retrieved data and saves it to disk.
 - Sends the CSV file to https://httpbin.org/post using a POST request.
 - Logs directly to console with print, but can easily be configured to use a logging library instead.
