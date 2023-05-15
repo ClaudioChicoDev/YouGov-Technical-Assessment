@@ -14,7 +14,7 @@ This is an advanced FastAPI application that fetches data from the Star Wars API
 - Uses a standard Python concurrent strategy suitable for generalization.
 - Generates a CSV file from the retrieved data and saves it to disk.
 - Sends the CSV file to https://httpbin.org/post using a POST request.
-- Logs directly to console with print, but can easily be configured to use a logging library instead.
+- Logs directly to console with the appropriate log level.
 - Handles exceptions and errors raising HTTPException with appropriate status codes and messages.
 - Includes comprehensive API testing of all endpoints in cache and no-cache modes.
 
@@ -49,6 +49,7 @@ These are the minimum required parameters that you should configure:
     REDIS_HOST=redis
     REDIS_PORT=6379
     REDIS_PASSWORD=changeMe # Always use a strong password in production
+    LOGGING_LEVEL=INFO # Valid values: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 These are all the available parameters that can be configured. Any parameter added to the Settings class in config.py can be configured in the .env file.
 
@@ -56,6 +57,7 @@ These are all the available parameters that can be configured. Any parameter add
     WEB_HOST=0.0.0.0
     WEB_PORT=8000
     WEB_SERVER=uvicorn # Valid values: uvicorn, gunicorn
+    LOGGING_LEVEL=INFO # Valid values: DEBUG, INFO, WARNING, ERROR, CRITICAL
 
     # General settings
     APP_NAME=Fancy Star Wars API Service
@@ -92,6 +94,7 @@ This command builds the Docker image and starts the containers defined in docker
 
 You can access the API at http://localhost:8000. 
 The route for the technical assessment is http://localhost:8000/characters/top_10_sorted. 
+
 The API documentation is available at http://localhost:8000/docs or http://localhost:8000/redoc 
 
 *The Port may vary depending on your .env file configuration*

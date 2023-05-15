@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     app_version: str = "0.0.1"
     description: Optional[str] = "This fancy API service provides information about Star Wars characters. It's been put together as a technical assestment for a job application. It's not very useful, but it's fancy."
     author: Optional[str] = "Claudio Chico"
+    logging_level: str = "INFO"    # DEBUG, INFO, WARNING, ERROR, CRITICAL
 
     # Redis settings
     redis_host: str = "localhost"

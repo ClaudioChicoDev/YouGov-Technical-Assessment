@@ -5,10 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from .config import Settings
 from .routes import general, character
 from .utils import get_redis_client
-
+import logging
 
 settings = Settings()
 
+logging.basicConfig(level=logging.getLevelName(settings.logging_level))
+logger = logging.getLogger(__name__)
+logger.info("Logging level set to %s (%s)" % (settings.logging_level, logging.getLevelName(settings.logging_level)))
 app = FastAPI()
 
 # Middlewares

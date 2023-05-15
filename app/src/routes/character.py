@@ -1,4 +1,4 @@
-# .app/src/routes/character.py
+# ./app/src/routes/character.py
 
 from fastapi import APIRouter, HTTPException, status, Depends
 from ..config import Settings
@@ -13,8 +13,10 @@ import json
 import requests
 import pandas as pd
 import os
+import logging
 
 
+logger = logging.getLogger(__name__)
 
 settings = Settings()
 
@@ -32,11 +34,11 @@ def fetch_films_data(use_cache: bool = True):
     cache_key = "films_data"
     cache_data = redis_client.get(cache_key)
     if bool(cache_data):
-        print(f" - Cache TTL for films data: {redis_client.ttl(cache_key)} seconds")
+        logger.info(f" - Cache TTL for films data: {redis_client.ttl(cache_key)} seconds")
         return json.loads(cache_data.decode("utf-8"))
     else:
         url = "https://swapi.dev/api/films"
-        print(f" - Fetching films: {url}")
+        logger.info(f" - Fetching films: {url}")
         response = requests.get(url)
         if response.status_code != 200:
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, 
@@ -47,7 +49,7 @@ def fetch_films_data(use_cache: bool = True):
             redis_client.setex(cache_key, settings.cache_ttl, json.dumps(data))
             return data
         except ValidationError as e:
-            print(e)
+            logger.error(e)
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                                 detail="Unable to fetch films data. API response format is invalid")
 
@@ -62,10 +64,10 @@ def fetch_character_data(character_url: str, use_cache: bool = True):
         cache_key = f"character_data:{character_url}"
         cache_data = redis_client.get(cache_key)
     if bool(cache_data):
-        print(f" - Cache TTL for character data: {redis_client.ttl(cache_key)} seconds")
+        logger.info(f" - Cache TTL for character data: {redis_client.ttl(cache_key)} seconds")
         return json.loads(cache_data.decode("utf-8"))
     else:
-        print(f" - Fetching character: {character_url}")
+        logger.info(f" - Fetching character: {character_url}")
         response = requests.get(character_url)
         if response.status_code != 200:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
@@ -91,14 +93,14 @@ def fetch_species_data(species_url: str, use_cache: bool = True):
         cache_key = f"species_data:{species_url}"
         cache_data = redis_client.get(cache_key)
     if bool(cache_data):
-        print(f" - Cache TTL for species data: {redis_client.ttl(cache_key)} seconds")
+        logger.info(f" - Cache TTL for species data: {redis_client.ttl(cache_key)} seconds")
         return json.loads(cache_data.decode("utf-8"))
     else:
-        print(f" - Fetching species: {species_url}")
+        logger.info(f" - Fetching species: {species_url}")
         response = requests.get(species_url)
         if response.status_code != 200:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Unable to fetch species data")
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, 
+                                detail="Unable to fetch species data")
         try:
             data = response.json()
             Species(**data).dict()
@@ -119,12 +121,10 @@ def get_top_10_sorted(redis_client: Redis = Depends(get_redis_client), use_cache
     else:
         cache_data = None
     if bool(cache_data):
-        print(
-            f" - Cache TTL: {redis_client.ttl('top_10_sorted_cache')} seconds")
-        print(" - Cache found")
+        logger.info(f" - Cache TTL: {redis_client.ttl('top_10_sorted_cache')} seconds")
         top_10_sorted = json.loads(cache_data.decode("utf-8"))
     else:
-        print(" - No cache found, fetching data from API")
+        logger.info(" - No cache found, fetching data from API")
         #this could be dynamic but the request was to use 10 characters only
         max_characters = 10
 
@@ -158,8 +158,7 @@ def get_top_10_sorted(redis_client: Redis = Depends(get_redis_client), use_cache
                 try:
                     top_characters_data[url] = future.result()
                 except Exception as exc:
-                    print(
-                        f"Fetching character {url} raised an exception: {exc}")
+                    logger.error(f"Fetching character {url} raised an exception: {exc}")
                     raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                                         detail=f"Unable to fetch character data for {url}")
 
@@ -177,26 +176,22 @@ def get_top_10_sorted(redis_client: Redis = Depends(get_redis_client), use_cache
                     species_index = top_characters_data[url]["species"].index(species_url)
                     top_characters_data[url]["species"][species_index] = species_data["name"]
                 except Exception as exc:
-                    print(f"Fetching species {species_url} for character {url} raised an exception: {exc}")
-                    raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=f"Unable to fetch species data for {species_url}")
+                    logger.error(f"Fetching species {species_url} for character {url} raised an exception: {exc}")
+                    raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, 
+                                        detail=f"Unable to fetch species data for {species_url}")
 
         # Format species names and add the appearances count explicitly
         for url, character in top_characters_data.items():
-            top_characters_data[url]["species"] = " & ".join(
-                character["species"])
-            top_characters_data[url]["appearances"] = len(
-                character["films"])
+            top_characters_data[url]["species"] = " & ".join(character["species"])
+            top_characters_data[url]["appearances"] = len(character["films"])
 
         # Sort characters based on height
-        top_10_sorted = sorted(top_characters_data.values(
-        ), key=lambda x: int(x["height"]), reverse=True)
+        top_10_sorted = sorted(top_characters_data.values(), key=lambda x: int(x["height"]), reverse=True)
 
         if use_cache:
             # Cache the result with a TTL of settings.cache_ttl
-            redis_client.setex("top_10_sorted_cache", settings.cache_ttl, json.dumps(
-                top_10_sorted))
-            print(
-                f" - Cache set with TTL: {settings.cache_ttl} seconds")
+            redis_client.setex("top_10_sorted_cache", settings.cache_ttl, json.dumps(top_10_sorted))
+            logger.info(f" - Cache set with TTL: {settings.cache_ttl} seconds")
 
     # Create a CSV with the columns: name, species, height, appearances
     # It's a bit overkill to use Pandas for this simple case, but lets do it anyway.
@@ -215,17 +210,16 @@ def get_top_10_sorted(redis_client: Redis = Depends(get_redis_client), use_cache
     df.to_csv("csv/top_10_sorted.csv", index=False)
 
     # Print the csv file content
-    print("\n - CSV file content:")
-    print(df.to_csv(index=False))
+    logger.info("\n\n\nCSV file content:\n\n%s" % df.to_csv(index=False))
 
     # Send the CSV to httpbin.org
     with open('csv/top_10_sorted.csv', 'rb') as f:
         files = {'file': f}
         response = requests.post('https://httpbin.org/post', files=files)
         if response.status_code != 200:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Unable to send CSV file to httpbin.org")
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, 
+                                detail="Unable to send CSV file to httpbin.org")
         else:
-            print(" - CSV file sent to httpbin.org successfully")
+            logger.info(" - CSV file sent to httpbin.org successfully")
 
     return top_10_sorted
