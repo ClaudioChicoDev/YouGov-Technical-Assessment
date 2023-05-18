@@ -30,9 +30,11 @@ def fetch_films_data(use_cache: bool = True):
     # Fetch films data from the API or cache if available and requested
     # The data is validated against the FilmList schema, but the validation is not strict and we use the original data
     # We'd need to validate the data thoroughly if other parts of the application depended on it, but in this case it's not necessary.
-    redis_client = get_redis_client()
-    cache_key = "films_data"
-    cache_data = redis_client.get(cache_key)
+    cache_data = None
+    if use_cache:
+        redis_client = get_redis_client()
+        cache_key = "films_data"
+        cache_data = redis_client.get(cache_key)
     if bool(cache_data):
         logger.info(f" - Cache TTL for films data: {redis_client.ttl(cache_key)} seconds")
         return json.loads(cache_data.decode("utf-8"))
@@ -46,7 +48,8 @@ def fetch_films_data(use_cache: bool = True):
         try:
             data = response.json()
             FilmList(**data).dict()
-            redis_client.setex(cache_key, settings.cache_ttl, json.dumps(data))
+            if use_cache:
+                redis_client.setex(cache_key, settings.cache_ttl, json.dumps(data))
             return data
         except ValidationError as e:
             logger.error(e)
