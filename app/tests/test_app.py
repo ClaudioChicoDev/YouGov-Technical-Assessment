@@ -53,9 +53,7 @@ def test_fetch_films_data_without_cache():
 
 
 def test_fetch_films_data_with_cache():
-    start_time = time.time()
     films_data = fetch_films_data(use_cache=False)
-    first_fetch_time = time.time() - start_time
 
     # Assert the expected results
     assert films_data is not None
@@ -64,12 +62,13 @@ def test_fetch_films_data_with_cache():
     assert "results" in films_data
     assert len(films_data["results"]) >= 6
     assert films_data["results"][0]["title"] == "A New Hope"
+    films_data_1 = films_data.copy()
 
     # Call the function twice to test the cache
+    time.sleep(1) # Give the API a break, lets be nice
     films_data = fetch_films_data(use_cache=True)
-    start_time = time.time()
+    time.sleep(1)
     films_data = fetch_films_data(use_cache=True)
-    second_fetch_time = time.time() - start_time
 
     # Assert the expected results
     assert films_data is not None
@@ -78,6 +77,9 @@ def test_fetch_films_data_with_cache():
     assert "results" in films_data
     assert len(films_data["results"]) >= 6
     assert films_data["results"][0]["title"] == "A New Hope"
+
+    # Check that the data is the same in cache and in non-cache calls    
+    assert films_data == films_data_1
 
 
 def test_fetch_character_data_without_cache():
@@ -97,28 +99,31 @@ def test_fetch_character_data_without_cache():
 
 
 def test_fetch_character_data_with_cache():
-    start_time = time.time()
     character_data = fetch_character_data(
         "https://swapi.dev/api/people/1/", use_cache=False)
-    first_run_time = time.time() - start_time
 
     # Assert the expected results
     assert character_data is not None
     assert isinstance(character_data, dict)
     assert schemas.Character(**character_data)
     assert character_data["name"] == "Luke Skywalker"
+
+    character_data_1 = character_data.copy()
 
     # Call the function twice to test the cache
+    time.sleep(1) # Give the API a break, lets be nice
     character_data = fetch_character_data("https://swapi.dev/api/people/1/", use_cache=True)
-    start_time = time.time()
+    time.sleep(1)
     character_data = fetch_character_data("https://swapi.dev/api/people/1/", use_cache=True)
-    second_run_time = time.time() - start_time
 
     # Assert the expected results
     assert character_data is not None
     assert isinstance(character_data, dict)
     assert schemas.Character(**character_data)
     assert character_data["name"] == "Luke Skywalker"
+
+    # Check that the data is the same in cache and in non-cache calls
+    assert character_data == character_data_1
 
 
 def test_fetch_species_data_without_cache():
@@ -139,28 +144,31 @@ def test_fetch_species_data_without_cache():
 
 def test_fetch_species_data_with_cache():
     # Call the fetch_species_data function (once to populate the cache)
-    start_time = time.time()
     species_data = fetch_species_data(
         "https://swapi.dev/api/species/2/", use_cache=False)
-    first_run_time = time.time() - start_time
 
     # Assert the expected results
     assert species_data is not None
     assert isinstance(species_data, dict)
     assert schemas.Species(**species_data)
     assert species_data["name"] == "Droid"
+
+    species_data_1 = species_data.copy()
 
     # Call the function twice to test the cache
+    time.sleep(1) # Give the API a break, lets be nice
     species_data = fetch_species_data("https://swapi.dev/api/species/2/", use_cache=True)
-    start_time = time.time()
+    time.sleep(1)
     species_data = fetch_species_data("https://swapi.dev/api/species/2/", use_cache=True)
-    second_run_time = time.time() - start_time
 
     # Assert the expected results
     assert species_data is not None
     assert isinstance(species_data, dict)
     assert schemas.Species(**species_data)
     assert species_data["name"] == "Droid"
+
+    # Check that the data is the same in cache and in non-cache calls
+    assert species_data == species_data_1
 
 
 def test_top_10_sorted_without_cache():
@@ -202,8 +210,12 @@ def test_top_10_sorted_with_cache():
     assert top_10_sorted[0]["appearances"] == 4
     assert top_10_sorted[0]["species"] == "Wookie"
 
+    top_10_sorted_1 = top_10_sorted.copy()
+
     # Make new requests using the cache
+    time.sleep(1) # Give the API a break, lets be nice
     response = client.get("/characters/top_10_sorted?use_cache=True")
+    time.sleep(1)
     response = client.get("/characters/top_10_sorted?use_cache=True")
 
     assert response.status_code == 200
@@ -218,6 +230,9 @@ def test_top_10_sorted_with_cache():
     assert top_10_sorted[0]["height"] == 228
     assert top_10_sorted[0]["appearances"] == 4
     assert top_10_sorted[0]["species"] == "Wookie"
+
+    # Check that the data is the same in cache and in non-cache calls
+    assert top_10_sorted == top_10_sorted_1
 
 
 def test_csv_generation():
